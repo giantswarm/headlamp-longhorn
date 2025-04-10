@@ -1,33 +1,24 @@
 import {
   registerRoute,
   registerSidebarEntry,
-  K8s,
   // Plugin, // Uncomment if you need Plugin class features
 } from '@kinvolk/headlamp-plugin/lib';
 import {
-  DetailsGrid,
-  Loader,
-  ResourceListView,
-  MainInfoSection,
-  SectionBox,
-  NameValueTable,
   ConditionsTable,
   Link,
+  Loader,
+  MainInfoSection,
+  NameValueTable,
+  ResourceListView,
+  SectionBox,
   StatusLabel,
   Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-} from '@mui/material';
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
-import { useParams } from 'react-router-dom';
+import { Box, Tab, Tabs, Typography } from '@mui/material';
 import React from 'react';
-
-const { makeKubeObject } = K8s.cluster;
+import { useParams } from 'react-router-dom';
 
 // Define functions that return the Longhorn Resource Classes
 const longhornGroup = 'longhorn.io';
@@ -812,9 +803,7 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && (
         // Add some padding to the panel content
-        <Box sx={{ pt: 2, pb: 2 }}> 
-          {children}
-        </Box>
+        <Box sx={{ pt: 2, pb: 2 }}>{children}</Box>
       )}
     </div>
   );
@@ -871,7 +860,9 @@ function SettingsView() {
 
   if (error) {
     // @ts-ignore Allow error message display
-    return <Typography color="error">Error loading settings: {(error as Error).message}</Typography>;
+    return (
+      <Typography color="error">Error loading settings: {(error as Error).message}</Typography>
+    );
   }
 
   if (!groupedSettings) {
@@ -885,18 +876,18 @@ function SettingsView() {
     <Box sx={{ width: '100%' }}>
       {/* Tab Headers */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange} 
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
           aria-label="Longhorn settings categories"
           variant="scrollable" // Allow tabs to scroll if they overflow
           scrollButtons="auto" // Show scroll buttons automatically
         >
           {categories.map((category, index) => (
-            <Tab 
-              key={category} 
-              label={`${category} (${groupedSettings[category].length})`} 
-              {...a11yProps(index)} 
+            <Tab
+              key={category}
+              label={`${category} (${groupedSettings[category].length})`}
+              {...a11yProps(index)}
             />
           ))}
         </Tabs>
@@ -909,13 +900,24 @@ function SettingsView() {
             rows={groupedSettings[category].map(setting => ({
               name: setting.metadata.name,
               value: (
-                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', width: '100%' }}>
-                  <Typography component="span" variant="body2" sx={{ wordBreak: 'break-word', flexGrow: 1, mr: 1 }}>
-                     {(setting.jsonData.value ?? '-').toString()}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'baseline',
+                    width: '100%',
+                  }}
+                >
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{ wordBreak: 'break-word', flexGrow: 1, mr: 1 }}
+                  >
+                    {(setting.jsonData.value ?? '-').toString()}
                   </Typography>
                   <Box component="span" sx={{ flexShrink: 0, ml: 1 }}>
                     <StatusLabel status={setting.jsonData.status?.applied ? 'success' : 'error'}>
-                      {(setting.jsonData.status?.applied ? 'applied' : 'not applied')} 
+                      {setting.jsonData.status?.applied ? 'applied' : 'not applied'}
                     </StatusLabel>
                   </Box>
                 </Box>

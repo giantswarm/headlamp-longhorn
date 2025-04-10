@@ -1,0 +1,101 @@
+# .github/workflows/ci.yml
+name: Build, Test, and Publish Plugin
+
+on:
+  push:
+    branches:
+      - main # Trigger on push to main branch
+    tags:
+      - 'v*' # Trigger on version tags like v1.0, v2.1.1, etc.
+  pull_request: # Also run checks on pull requests (but don't publish)
+    branches:
+      - main
+
+env:
+  # Define the image name for the plugin files container
+  IMAGE_NAME: ghcr.io/giantswarm/headlamp-longhorn
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to push container image to ghcr.io
+      packages: write 
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Or your preferred LTS version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # --- Run Checks ---
+      - name: Lint Plugin
+        run: npm run lint
+
+      - name: Check Formatting
+        run: npm run format -- --check
+
+      - name: Type Check Plugin
+        run: npm run tsc
+        
+      # - name: Run Tests (Optional)
+      #   # Uncomment this if you have tests defined in package.json script "test"
+      #   run: npm run test 
+
+      # --- Build Plugin ---
+      - name: Build Plugin
+        # This creates the dist/ directory needed for the Docker build
+        run: npm run build
+
+      # --- Build and Publish Docker Image ---
+      - name: Set up QEMU
+        # Needed for multi-platform builds if enabled later
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        # Only log in when pushing (not on pull requests or non-main pushes without tags)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }} # giantswarm
+          # Use the default GITHUB_TOKEN for authentication
+          password: ${{ secrets.GITHUB_TOKEN }} 
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          # Generate tags based on git events:
+          # - 'latest' for main branch push
+          # - version tag for tag push (e.g., v1.2.3 -> 1.2.3)
+          tags: |
+            type=ref,event=branch,pattern=main,suffix=-latest 
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image (Plugin Files)
+        uses: docker/build-push-action@v5
+        with:
+          context: . # Build from the root of the repo where Dockerfile is
+          # Use the Dockerfile that builds only the plugin files
+          # (Ensure this Dockerfile exists in your repo root)
+          file: ./Dockerfile 
+          push: ${{ github.event_name != 'pull_request' }} # Push only if not a pull request
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Enable caching to speed up builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 

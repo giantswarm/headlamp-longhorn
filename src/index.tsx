@@ -13,6 +13,7 @@ import {
   ConditionsTable,    // <-- Add ConditionsTable
   Link,               // <-- Add Link
   StatusLabel,        // <-- Add StatusLabel for Node Ready/Schedulable
+  Table,              // <-- Add Table for disks
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd'; // Import makeCustomResourceClass
@@ -162,6 +163,104 @@ function VolumeDetailsView() {
   );
 }
 
+// Define interfaces for Disk Spec and Status (simplified)
+interface DiskSpec {
+  path?: string;
+  diskType?: string;
+  allowScheduling?: boolean;
+  tags?: string[];
+  // Add other spec fields if needed
+}
+
+interface DiskStatus {
+  diskName?: string;
+  diskUUID?: string;
+  diskPath?: string;
+  diskType?: string;
+  storageAvailable?: number | string;
+  storageScheduled?: number | string;
+  storageMaximum?: number | string;
+  conditions?: any[];
+  // Add other status fields if needed
+}
+
+// Define the Disk Table Component
+function NodeDiskTable({ specDisks, statusDisks }: { specDisks: any; statusDisks: any }) {
+  const disksData = React.useMemo(() => {
+    if (!statusDisks) return [];
+
+    // Create a map from spec disk name to spec for easier lookup
+    const specMapByName: { [key: string]: DiskSpec } = {};
+    for (const [name, spec] of Object.entries(specDisks || {}) as [string, DiskSpec][]) {
+      specMapByName[name] = spec;
+    }
+
+    // Combine status and spec based on status.diskName matching the spec key
+    return (Object.entries(statusDisks) as [string, DiskStatus][]).map(([uuid, status]) => {
+      const matchingSpec: DiskSpec = (status.diskName && specMapByName[status.diskName]) || {};
+      // Use status.diskUUID if available, otherwise fallback to the key from the map
+      const actualUuid = status.diskUUID || uuid;
+      return { uuid: actualUuid, spec: matchingSpec, status };
+    });
+
+  }, [specDisks, statusDisks]);
+
+  return (
+    <Table
+      data={disksData}
+      columns={[
+        // Use status.diskName as the primary identifier
+        { header: 'Name', accessorFn: (item: { status: DiskStatus }) => item.status?.diskName || '-' },
+        { header: 'UUID', accessorKey: 'uuid' },
+        {
+          header: 'Path',
+          accessorFn: (item: { status: DiskStatus, spec: DiskSpec }) => item.status?.diskPath || item.spec?.path || '-',
+        },
+        {
+          header: 'Type',
+          accessorFn: (item: { status: DiskStatus, spec: DiskSpec }) => item.status?.diskType || item.spec?.diskType || '-',
+        },
+        {
+          header: 'Allow Scheduling',
+          accessorFn: (item: { spec: DiskSpec }) => String(item.spec?.allowScheduling ?? '-'),
+        },
+        {
+          header: 'Storage Available',
+          // Display raw bytes for now
+          accessorFn: (item: { status: DiskStatus }) => item.status?.storageAvailable || '-',
+        },
+        {
+          header: 'Storage Scheduled',
+          // Display raw bytes for now
+          accessorFn: (item: { status: DiskStatus }) => item.status?.storageScheduled || '-',
+        },
+        {
+          header: 'Storage Maximum',
+          // Display raw bytes for now
+          accessorFn: (item: { status: DiskStatus }) => item.status?.storageMaximum || '-',
+        },
+        {
+          header: 'Tags',
+          accessorFn: (item: { spec: DiskSpec }) => item.spec?.tags?.join(', ') || '-',
+        },
+        {
+          header: 'Status',
+          accessorFn: (item: { status: DiskStatus }) => {
+            const readyCondition = item.status?.conditions?.find(c => c.type === 'Ready');
+            return (
+              <StatusLabel
+                status={readyCondition?.status === 'True' ? 'success' : 'error'}
+              >
+                {readyCondition?.status || 'Unknown'}
+              </StatusLabel>
+            );
+          },
+        },
+      ]}
+    />
+  );
+}
+
 function NodeDetailsView() {
   const { namespace, name } = useParams<{ namespace: string; name: string }>();
   const [item, error] = LonghornNode.useGet(name, namespace);
@@ -231,6 +330,9 @@ function NodeDetailsView() {
              { name: 'Disk Status', value: Object.keys(status.diskStatus || {}).join(', ') || '-' },
            ]}
          />
+      </SectionBox>
+      <SectionBox title="Disks">
+        <NodeDiskTable specDisks={spec.disks} statusDisks={status.diskStatus} />
       </SectionBox>
       <SectionBox title="Conditions">
         <ConditionsTable resource={item.jsonData} />

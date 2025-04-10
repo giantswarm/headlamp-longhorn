@@ -90,7 +90,13 @@ function VolumeDetailsView() {
            {
              name: 'Node',
              value: status.currentNodeID ? (
-               <Link routeName="node" params={{ name: status.currentNodeID }}>
+               <Link
+                 routeName="node"
+                 params={{ 
+                   name: status.currentNodeID,
+                   namespace: namespace,
+                 }}
+               >
                  {status.currentNodeID}
                </Link>
              ) : (
@@ -540,7 +546,7 @@ registerRoute({
       title="Longhorn Volumes"
       resourceClass={LonghornVolume}
       columns={[
-        // Use default name column rendering
+        // Rely on default name column rendering
         'name',
         // Other columns... (state, robustness, size, node, namespace, age)
         {
@@ -645,12 +651,20 @@ registerRoute({
       title="Longhorn Settings"
       resourceClass={LonghornSetting}
       columns={[
-        'name',
+        // Explicitly define 'name' column to render plain text using getter
+        {
+          id: 'name',
+          label: 'Name',
+          // Use getter to return plain text
+          getter: (setting: KubeObjectInterface) => setting.metadata.name,
+          sort: true,
+        },
         {
           id: 'value',
           label: 'Value',
-          getter: (setting: KubeObjectInterface) => setting.jsonData?.value, // Already using jsonData
-          sort: false,
+          // Revert to using getter for value
+          getter: (setting: KubeObjectInterface) => (setting.jsonData?.value ?? '-').toString(),
+          sort: false, // Values might be complex and not easily sortable
         },
         {
           id: 'applied',

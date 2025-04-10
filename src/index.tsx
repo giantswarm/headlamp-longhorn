@@ -6,19 +6,22 @@ import {
 } from '@kinvolk/headlamp-plugin/lib';
 import {
   DetailsGrid,
+  Loader,
   ResourceListView,
-  MainInfoSection, // Import MainInfoSection
-  SectionBox,         // <-- Add SectionBox
-  NameValueTable,     // <-- Add NameValueTable
-  ConditionsTable,    // <-- Add ConditionsTable
-  Link,               // <-- Add Link
-  StatusLabel,        // <-- Add StatusLabel for Node Ready/Schedulable
-  Table,              // <-- Add Table for disks
+  MainInfoSection,
+  SectionBox,
+  NameValueTable,
+  ConditionsTable,
+  Link,
+  StatusLabel,
+  Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
-import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd'; // Import makeCustomResourceClass
-import { useParams } from 'react-router-dom'; // Import useParams
-import React from 'react'; // Import React
+import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
+import { useParams } from 'react-router-dom';
+import React from 'react';
 
 const { makeKubeObject } = K8s.cluster;
 
@@ -85,84 +88,87 @@ function VolumeDetailsView() {
         // @ts-ignore Title prop works but might show TS error depending on Headlamp version
         title={`Volume: ${metadata.name}`}
         extraInfo={[
-           { name: 'State', value: status.state || '-' },
-           { name: 'Robustness', value: status.robustness || '-' },
-           {
-             name: 'Node',
-             value: status.currentNodeID ? (
-               <Link
-                 routeName="node"
-                 params={{ 
-                   name: status.currentNodeID,
-                   namespace: namespace,
-                 }}
-               >
-                 {status.currentNodeID}
-               </Link>
-             ) : (
-               '-'
-             ),
-           },
-           { name: 'Size', value: spec.size || '-' },
+          { name: 'State', value: status.state || '-' },
+          { name: 'Robustness', value: status.robustness || '-' },
+          {
+            name: 'Node',
+            value: status.currentNodeID ? (
+              <Link
+                routeName="node"
+                params={{
+                  name: status.currentNodeID,
+                  namespace: namespace,
+                }}
+              >
+                {status.currentNodeID}
+              </Link>
+            ) : (
+              '-'
+            ),
+          },
+          { name: 'Size', value: spec.size || '-' },
         ]}
         // actions={[ /* Add Actions Here */ ]}
       />
       <SectionBox title="Status Details">
-         <NameValueTable
-           rows={[
-             { name: 'Actual Size', value: status.actualSize || '-' },
-             { name: 'Frontend Disabled', value: String(status.frontendDisabled) },
-             { name: 'Is Standby', value: String(status.isStandby) },
-             { name: 'Share Endpoint', value: status.shareEndpoint || '-' },
-             { name: 'Share State', value: status.shareState || '-' },
-             { name: 'Last Backup', value: status.lastBackup || '-' },
-             { name: 'Last Backup At', value: status.lastBackupAt || '-' },
-             { name: 'Expansion Required', value: String(status.expansionRequired) },
-             { name: 'Restore Required', value: String(status.restoreRequired) },
-             { name: 'Restore Initiated', value: String(status.restoreInitiated) },
-           ]}
-         />
+        <NameValueTable
+          rows={[
+            { name: 'Actual Size', value: status.actualSize || '-' },
+            { name: 'Frontend Disabled', value: String(status.frontendDisabled) },
+            { name: 'Is Standby', value: String(status.isStandby) },
+            { name: 'Share Endpoint', value: status.shareEndpoint || '-' },
+            { name: 'Share State', value: status.shareState || '-' },
+            { name: 'Last Backup', value: status.lastBackup || '-' },
+            { name: 'Last Backup At', value: status.lastBackupAt || '-' },
+            { name: 'Expansion Required', value: String(status.expansionRequired) },
+            { name: 'Restore Required', value: String(status.restoreRequired) },
+            { name: 'Restore Initiated', value: String(status.restoreInitiated) },
+          ]}
+        />
       </SectionBox>
       <SectionBox title="Configuration">
-         <NameValueTable
-           rows={[
-             { name: 'Data Engine', value: spec.dataEngine || '-' },
-             { name: 'Frontend', value: spec.frontend || '-' },
-             { name: 'Number of Replicas', value: spec.numberOfReplicas || '-' },
-             { name: 'Data Locality', value: spec.dataLocality || '-' },
-             { name: 'Access Mode', value: spec.accessMode || '-' },
-             { name: 'Backing Image', value: spec.backingImage || '-' },
-             { name: 'Stale Replica Timeout', value: spec.staleReplicaTimeout || '-' },
-             { name: 'Encrypted', value: String(spec.encrypted) },
-             { name: 'Engine Image', value: spec.image || '-' }, // Engine image used
-             { name: 'From Backup', value: spec.fromBackup || '-' },
-             { name: 'Disk Selector', value: spec.diskSelector?.join(', ') || '-' },
-             { name: 'Node Selector', value: spec.nodeSelector?.join(', ') || '-' },
-             { name: 'Disable Revision Counter', value: String(spec.revisionCounterDisabled) },
-             { name: 'Replica Auto Balance', value: spec.replicaAutoBalance || '-' },
-             { name: 'Unmap Mark SnapChain Removed', value: spec.unmapMarkSnapChainRemoved || '-' },
-             { name: 'Snapshot Data Integrity', value: spec.snapshotDataIntegrity || '-' },
-             { name: 'Freeze Filesystem For Snapshot', value: spec.freezeFilesystemForSnapshot || '-' },
-             { name: 'Backup Target', value: spec.backupTargetName || '-' },
-             { name: 'Backup Compression Method', value: spec.backupCompressionMethod || '-' },
-           ]}
-         />
+        <NameValueTable
+          rows={[
+            { name: 'Data Engine', value: spec.dataEngine || '-' },
+            { name: 'Frontend', value: spec.frontend || '-' },
+            { name: 'Number of Replicas', value: spec.numberOfReplicas || '-' },
+            { name: 'Data Locality', value: spec.dataLocality || '-' },
+            { name: 'Access Mode', value: spec.accessMode || '-' },
+            { name: 'Backing Image', value: spec.backingImage || '-' },
+            { name: 'Stale Replica Timeout', value: spec.staleReplicaTimeout || '-' },
+            { name: 'Encrypted', value: String(spec.encrypted) },
+            { name: 'Engine Image', value: spec.image || '-' }, // Engine image used
+            { name: 'From Backup', value: spec.fromBackup || '-' },
+            { name: 'Disk Selector', value: spec.diskSelector?.join(', ') || '-' },
+            { name: 'Node Selector', value: spec.nodeSelector?.join(', ') || '-' },
+            { name: 'Disable Revision Counter', value: String(spec.revisionCounterDisabled) },
+            { name: 'Replica Auto Balance', value: spec.replicaAutoBalance || '-' },
+            { name: 'Unmap Mark SnapChain Removed', value: spec.unmapMarkSnapChainRemoved || '-' },
+            { name: 'Snapshot Data Integrity', value: spec.snapshotDataIntegrity || '-' },
+            {
+              name: 'Freeze Filesystem For Snapshot',
+              value: spec.freezeFilesystemForSnapshot || '-',
+            },
+            { name: 'Backup Target', value: spec.backupTargetName || '-' },
+            { name: 'Backup Compression Method', value: spec.backupCompressionMethod || '-' },
+          ]}
+        />
       </SectionBox>
       <SectionBox title="Kubernetes Status">
-         <NameValueTable
-             rows={[
-               { name: 'Namespace', value: kubernetesStatus.namespace || '-' },
-               { name: 'PVC Name', value: kubernetesStatus.pvcName || '-' },
-               { name: 'PV Name', value: kubernetesStatus.pvName || '-' },
-               { name: 'PV Status', value: kubernetesStatus.pvStatus || '-' },
-               { name: 'Last PVCRef At', value: kubernetesStatus.lastPVCRefAt || '-' },
-               { name: 'Last PodRef At', value: kubernetesStatus.lastPodRefAt || '-' },
-               // TODO: Consider rendering workloadsStatus as a small table if needed
-             ]}
-           />
+        <NameValueTable
+          rows={[
+            { name: 'Namespace', value: kubernetesStatus.namespace || '-' },
+            { name: 'PVC Name', value: kubernetesStatus.pvcName || '-' },
+            { name: 'PV Name', value: kubernetesStatus.pvName || '-' },
+            { name: 'PV Status', value: kubernetesStatus.pvStatus || '-' },
+            { name: 'Last PVCRef At', value: kubernetesStatus.lastPVCRefAt || '-' },
+            { name: 'Last PodRef At', value: kubernetesStatus.lastPodRefAt || '-' },
+            // TODO: Consider rendering workloadsStatus as a small table if needed
+          ]}
+        />
       </SectionBox>
       <SectionBox title="Conditions">
-         <ConditionsTable resource={item.jsonData} />
+        <ConditionsTable resource={item.jsonData} />
       </SectionBox>
       {/* TODO: Add sections for Replicas, Snapshots, etc. linking to respective views if applicable */}
     </>
@@ -208,7 +214,6 @@ function NodeDiskTable({ specDisks, statusDisks }: { specDisks: any; statusDisks
       const actualUuid = status.diskUUID || uuid;
       return { uuid: actualUuid, spec: matchingSpec, status };
     });
-
   }, [specDisks, statusDisks]);
 
   return (
@@ -216,15 +221,20 @@ function NodeDiskTable({ specDisks, statusDisks }: { specDisks: any; statusDisks
       data={disksData}
       columns={[
         // Use status.diskName as the primary identifier
-        { header: 'Name', accessorFn: (item: { status: DiskStatus }) => item.status?.diskName || '-' },
+        {
+          header: 'Name',
+          accessorFn: (item: { status: DiskStatus }) => item.status?.diskName || '-',
+        },
         { header: 'UUID', accessorKey: 'uuid' },
         {
           header: 'Path',
-          accessorFn: (item: { status: DiskStatus, spec: DiskSpec }) => item.status?.diskPath || item.spec?.path || '-',
+          accessorFn: (item: { status: DiskStatus; spec: DiskSpec }) =>
+            item.status?.diskPath || item.spec?.path || '-',
         },
         {
           header: 'Type',
-          accessorFn: (item: { status: DiskStatus, spec: DiskSpec }) => item.status?.diskType || item.spec?.diskType || '-',
+          accessorFn: (item: { status: DiskStatus; spec: DiskSpec }) =>
+            item.status?.diskType || item.spec?.diskType || '-',
         },
         {
           header: 'Allow Scheduling',
@@ -254,9 +264,7 @@ function NodeDiskTable({ specDisks, statusDisks }: { specDisks: any; statusDisks
           accessorFn: (item: { status: DiskStatus }) => {
             const readyCondition = item.status?.conditions?.find(c => c.type === 'Ready');
             return (
-              <StatusLabel
-                status={readyCondition?.status === 'True' ? 'success' : 'error'}
-              >
+              <StatusLabel status={readyCondition?.status === 'True' ? 'success' : 'error'}>
                 {readyCondition?.status || 'Unknown'}
               </StatusLabel>
             );
@@ -294,9 +302,7 @@ function NodeDetailsView() {
           {
             name: 'Ready',
             value: (
-              <StatusLabel
-                status={readyCondition?.status === 'True' ? 'success' : 'error'}
-              >
+              <StatusLabel status={readyCondition?.status === 'True' ? 'success' : 'error'}>
                 {readyCondition?.status || 'Unknown'}
               </StatusLabel>
             ),
@@ -304,12 +310,10 @@ function NodeDetailsView() {
           {
             name: 'Schedulable',
             value: (
-               <StatusLabel
-                 status={schedulableCondition?.status === 'True' ? 'success' : 'error'}
-               >
-                 {schedulableCondition?.status || 'Unknown'}
-               </StatusLabel>
-             ),
+              <StatusLabel status={schedulableCondition?.status === 'True' ? 'success' : 'error'}>
+                {schedulableCondition?.status || 'Unknown'}
+              </StatusLabel>
+            ),
           },
           { name: 'Allow Scheduling', value: String(spec.allowScheduling ?? '-') },
           { name: 'Region', value: status.region || '-' },
@@ -328,14 +332,17 @@ function NodeDetailsView() {
         />
       </SectionBox>
       <SectionBox title="Status Details">
-         <NameValueTable
-           rows={[
-             { name: 'Auto Evicting', value: String(status.autoEvicting) },
-             { name: 'Last Periodic Snapshot Check', value: status.snapshotCheckStatus?.lastPeriodicCheckedAt || '-' },
-             // TODO: Render diskStatus in a better way, maybe a table?
-             { name: 'Disk Status', value: Object.keys(status.diskStatus || {}).join(', ') || '-' },
-           ]}
-         />
+        <NameValueTable
+          rows={[
+            { name: 'Auto Evicting', value: String(status.autoEvicting) },
+            {
+              name: 'Last Periodic Snapshot Check',
+              value: status.snapshotCheckStatus?.lastPeriodicCheckedAt || '-',
+            },
+            // TODO: Render diskStatus in a better way, maybe a table?
+            { name: 'Disk Status', value: Object.keys(status.diskStatus || {}).join(', ') || '-' },
+          ]}
+        />
       </SectionBox>
       <SectionBox title="Disks">
         <NodeDiskTable specDisks={spec.disks} statusDisks={status.diskStatus} />
@@ -395,12 +402,16 @@ function BackupDetailsView() {
       </SectionBox>
       {spec.labels && (
         <SectionBox title="Spec Labels">
-          <NameValueTable rows={Object.entries(spec.labels).map(([k, v]) => ({ name: k, value: v as string }))} />
+          <NameValueTable
+            rows={Object.entries(spec.labels).map(([k, v]) => ({ name: k, value: v as string }))}
+          />
         </SectionBox>
       )}
       {status.labels && (
         <SectionBox title="Status Labels">
-          <NameValueTable rows={Object.entries(status.labels).map(([k, v]) => ({ name: k, value: v as string }))} />
+          <NameValueTable
+            rows={Object.entries(status.labels).map(([k, v]) => ({ name: k, value: v as string }))}
+          />
         </SectionBox>
       )}
       {status.error && (
@@ -409,9 +420,14 @@ function BackupDetailsView() {
         </SectionBox>
       )}
       {status.messages && (
-         <SectionBox title="Messages">
-           <NameValueTable rows={Object.entries(status.messages).map(([k, v]) => ({ name: k, value: v as string }))} />
-         </SectionBox>
+        <SectionBox title="Messages">
+          <NameValueTable
+            rows={Object.entries(status.messages).map(([k, v]) => ({
+              name: k,
+              value: v as string,
+            }))}
+          />
+        </SectionBox>
       )}
     </>
   );
@@ -451,9 +467,20 @@ function EngineImageDetailsView() {
           rows={[
             { name: 'Version', value: status.version || '-' },
             { name: 'Git Commit', value: status.gitCommit || '-' },
-            { name: 'CLI API Version', value: `${status.cliAPIMinVersion || '?'} - ${status.cliAPIVersion || '?'}` },
-            { name: 'Controller API Version', value: `${status.controllerAPIMinVersion || '?'} - ${status.controllerAPIVersion || '?'}` },
-            { name: 'Data Format Version', value: `${status.dataFormatMinVersion || '?'} - ${status.dataFormatVersion || '?'}` },
+            {
+              name: 'CLI API Version',
+              value: `${status.cliAPIMinVersion || '?'} - ${status.cliAPIVersion || '?'}`,
+            },
+            {
+              name: 'Controller API Version',
+              value: `${status.controllerAPIMinVersion || '?'} - ${
+                status.controllerAPIVersion || '?'
+              }`,
+            },
+            {
+              name: 'Data Format Version',
+              value: `${status.dataFormatMinVersion || '?'} - ${status.dataFormatVersion || '?'}`,
+            },
             { name: 'No Ref Since', value: status.noRefSince || '-' },
           ]}
         />
@@ -614,14 +641,16 @@ registerRoute({
         {
           id: 'allowScheduling',
           label: 'Allow Scheduling',
-          getter: (node: KubeObjectInterface) => (node.jsonData?.spec?.allowScheduling ?? '-').toString(), // Access via jsonData
+          getter: (node: KubeObjectInterface) =>
+            (node.jsonData?.spec?.allowScheduling ?? '-').toString(), // Access via jsonData
           sort: true,
         },
         {
           id: 'schedulable',
           label: 'Schedulable',
           getter: (node: KubeObjectInterface) =>
-            node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Schedulable')?.status || '-', // Access via jsonData
+            node.jsonData?.status?.conditions?.find((c: any) => c.type === 'Schedulable')?.status ||
+            '-', // Access via jsonData
           sort: true,
         },
         'age',
@@ -640,42 +669,225 @@ registerRoute({
   component: NodeDetailsView,
 });
 
-// Settings List View
+// --- Settings View Component ---
+
+// Define categories based on Longhorn docs
+const settingCategories: { [key: string]: string } = {
+  // General
+  'node-drain-policy': 'General',
+  'detach-manually-attached-volumes-when-cordoned': 'General',
+  'auto-cleanup-system-generated-snapshot': 'General',
+  'auto-cleanup-recurring-job-backup-snapshot': 'General',
+  'auto-delete-pod-when-volume-detached-unexpectedly': 'General',
+  'auto-salvage': 'General',
+  'concurrent-automatic-engine-upgrade-per-node-limit': 'General',
+  'concurrent-volume-backup-restore-per-node-limit': 'General',
+  'create-default-disk-labeled-nodes': 'General',
+  'default-data-locality': 'General',
+  'default-data-path': 'General',
+  'default-engine-image': 'General',
+  'default-longhorn-static-storage-class': 'General',
+  'default-replica-count': 'General',
+  'deleting-confirmation-flag': 'General',
+  'disable-revision-counter': 'General',
+  'upgrade-checker': 'General',
+  'upgrade-responder-url': 'General',
+  'latest-longhorn-version': 'General',
+  'current-longhorn-version': 'General',
+  'allow-collecting-longhorn-usage-metrics': 'General',
+  'node-down-pod-deletion-policy': 'General',
+  'registry-secret': 'General',
+  'replica-replenishment-wait-interval': 'General',
+  'system-managed-pods-image-pull-policy': 'General',
+  'backing-image-cleanup-wait-interval': 'General',
+  'backing-image-recovery-wait-interval': 'General',
+  'default-min-number-of-backing-image-copies': 'General',
+  'engine-replica-timeout': 'General',
+  'support-bundle-manager-image': 'General',
+  'support-bundle-failed-history-limit': 'General',
+  'support-bundle-node-collection-timeout': 'General',
+  'fast-replica-rebuild-enabled': 'General',
+  'replica-file-sync-http-client-timeout': 'General',
+  'long-grpc-timeout': 'General',
+  'rwx-volume-fast-failover': 'General',
+  'default-backing-image-manager-image': 'General',
+  'default-instance-manager-image': 'General',
+  'log-level': 'General',
+  'stable-longhorn-versions': 'General',
+  'crd-api-version': 'General', // Less user-facing, but put in General
+
+  // Snapshot
+  'snapshot-data-integrity': 'Snapshot',
+  'snapshot-data-integrity-immediate-check-after-snapshot-creation': 'Snapshot',
+  'snapshot-data-integrity-cronjob': 'Snapshot',
+  'snapshot-max-count': 'Snapshot',
+  'freeze-filesystem-for-snapshot': 'Snapshot',
+
+  // Orphan
+  'orphan-auto-deletion': 'Orphan',
+
+  // Backups
+  'allow-recurring-job-while-volume-detached': 'Backups',
+  'backup-execution-timeout': 'Backups',
+  'failed-backup-ttl': 'Backups',
+  'recurring-failed-jobs-history-limit': 'Backups',
+  'recurring-successful-jobs-history-limit': 'Backups',
+  'restore-volume-recurring-jobs': 'Backups',
+  'backup-compression-method': 'Backups',
+  'backup-concurrent-limit': 'Backups',
+  'restore-concurrent-limit': 'Backups',
+
+  // Scheduling
+  'allow-volume-creation-with-degraded-availability': 'Scheduling',
+  'disable-scheduling-on-cordoned-node': 'Scheduling',
+  'replica-soft-anti-affinity': 'Scheduling',
+  'replica-zone-soft-anti-affinity': 'Scheduling',
+  'replica-disk-soft-anti-affinity': 'Scheduling',
+  'replica-auto-balance': 'Scheduling',
+  'replica-auto-balance-disk-pressure-percentage': 'Scheduling',
+  'storage-minimal-available-percentage': 'Scheduling',
+  'storage-over-provisioning-percentage': 'Scheduling',
+  'storage-reserved-percentage-for-default-disk': 'Scheduling',
+  'allow-empty-node-selector-volume': 'Scheduling',
+  'allow-empty-disk-selector-volume': 'Scheduling',
+
+  // Danger Zone
+  'concurrent-replica-rebuild-per-node-limit': 'Danger Zone',
+  'concurrent-backing-image-replenish-per-node-limit': 'Danger Zone',
+  'taint-toleration': 'Danger Zone',
+  'priority-class': 'Danger Zone',
+  'system-managed-components-node-selector': 'Danger Zone',
+  'kubernetes-cluster-autoscaler-enabled': 'Danger Zone',
+  'storage-network': 'Danger Zone',
+  'storage-network-for-rwx-volume-enabled': 'Danger Zone',
+  'remove-snapshots-during-filesystem-trim': 'Danger Zone',
+  'guaranteed-instance-manager-cpu': 'Danger Zone',
+  'disable-snapshot-purge': 'Danger Zone',
+  'auto-cleanup-when-delete-backup': 'Danger Zone',
+  'v1-data-engine': 'Danger Zone',
+  'v2-data-engine': 'Danger Zone',
+  'v2-data-engine-guaranteed-instance-manager-cpu': 'Danger Zone',
+  'v2-data-engine-cpu-mask': 'Danger Zone',
+  'v2-data-engine-hugepage-limit': 'Danger Zone',
+  'v2-data-engine-fast-replica-rebuilding': 'Danger Zone',
+  'v2-data-engine-log-flags': 'Danger Zone',
+  'v2-data-engine-log-level': 'Danger Zone',
+};
+
+function getCategory(settingName: string): string {
+  return settingCategories[settingName] || 'Other'; // Default to 'Other' if not found
+}
+
+const categoryOrder = [
+  'General',
+  'Snapshot',
+  'Orphan',
+  'Backups',
+  'Scheduling',
+  'Danger Zone',
+  'Other',
+];
+
+function SettingsView() {
+  const [settings, error] = LonghornSetting.useList();
+
+  const groupedSettings = React.useMemo(() => {
+    if (!settings) return null;
+
+    const groups: { [key: string]: KubeObjectInterface[] } = {};
+    settings.forEach(setting => {
+      const category = getCategory(setting.metadata.name);
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      // Sort settings alphabetically within each group
+      groups[category].push(setting);
+      groups[category].sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
+    });
+
+    // Sort groups according to predefined order
+    const sortedGroups: { [key: string]: KubeObjectInterface[] } = {};
+    categoryOrder.forEach(category => {
+      if (groups[category]) {
+        sortedGroups[category] = groups[category];
+      }
+    });
+    // Add any remaining categories (like 'Other') at the end
+    Object.keys(groups).forEach(category => {
+      if (!sortedGroups[category]) {
+        sortedGroups[category] = groups[category];
+      }
+    });
+
+    return sortedGroups;
+  }, [settings]);
+
+  if (error) {
+    // @ts-ignore Allow error message display
+    return (
+      <Typography color="error">Error loading settings: {(error as Error).message}</Typography>
+    );
+  }
+
+  if (!groupedSettings) {
+    return <Loader title="Loading Longhorn Settings..." />;
+  }
+
+  return (
+    <Box>
+      {Object.entries(groupedSettings).map(([category, settingsInCategory]) => (
+        <Accordion key={category} defaultExpanded={category === 'General'}>
+          <AccordionSummary aria-controls={`${category}-content`} id={`${category}-header`}>
+            <Typography variant="h6">
+              {category} ({settingsInCategory.length})
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ paddingX: 1, paddingY: 1 }}>
+            <NameValueTable
+              rows={settingsInCategory.map(setting => ({
+                name: setting.metadata.name,
+                value: (
+                  // Revised Box styling for better side-by-side layout
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'baseline',
+                      width: '100%',
+                    }}
+                  >
+                    {/* Value Typography takes available space */}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ wordBreak: 'break-word', flexGrow: 1, mr: 1 }}
+                    >
+                      {(setting.jsonData.value ?? '-').toString()}
+                    </Typography>
+                    {/* Status Label in a non-shrinking Box with left margin */}
+                    <Box component="span" sx={{ flexShrink: 0, ml: 1 }}>
+                      <StatusLabel status={setting.jsonData.status?.applied ? 'success' : 'error'}>
+                        {(setting.jsonData.status?.applied ?? false).toString()}
+                      </StatusLabel>
+                    </Box>
+                  </Box>
+                ),
+              }))}
+            />
+          </AccordionDetails>
+        </Accordion>
+      ))}
+    </Box>
+  );
+}
+
+// Settings List View - Updated to use SettingsView component
 registerRoute({
   path: '/longhorn/settings',
   sidebar: LONGHORN_SETTINGS_LIST_ROUTE,
   name: LONGHORN_SETTINGS_LIST_ROUTE,
   exact: true,
-  component: () => (
-    <ResourceListView
-      title="Longhorn Settings"
-      resourceClass={LonghornSetting}
-      columns={[
-        // Explicitly define 'name' column to render plain text using getter
-        {
-          id: 'name',
-          label: 'Name',
-          // Use getter to return plain text
-          getter: (setting: KubeObjectInterface) => setting.metadata.name,
-          sort: true,
-        },
-        {
-          id: 'value',
-          label: 'Value',
-          // Revert to using getter for value
-          getter: (setting: KubeObjectInterface) => (setting.jsonData?.value ?? '-').toString(),
-          sort: false, // Values might be complex and not easily sortable
-        },
-        {
-          id: 'applied',
-          label: 'Applied',
-          getter: (setting: KubeObjectInterface) => (setting.jsonData?.status?.applied ?? false).toString(), // Access via jsonData
-          sort: true,
-        },
-        'age',
-      ]}
-    />
-  ),
+  component: SettingsView,
 });
 
 // Backups List View
@@ -704,7 +916,7 @@ registerRoute({
           getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.size || '-', // Access via jsonData
           sort: true,
         },
-         {
+        {
           id: 'backupTarget',
           label: 'Backup Target',
           getter: (backup: KubeObjectInterface) => backup.jsonData?.status?.backupTargetName || '-', // Access via jsonData

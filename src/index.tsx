@@ -12,6 +12,7 @@ import {
   NameValueTable,     // <-- Add NameValueTable
   ConditionsTable,    // <-- Add ConditionsTable
   Link,               // <-- Add Link
+  StatusLabel,        // <-- Add StatusLabel for Node Ready/Schedulable
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd'; // Import makeCustomResourceClass
@@ -166,13 +167,76 @@ function NodeDetailsView() {
   const [item, error] = LonghornNode.useGet(name, namespace);
 
   if (error) {
+    // @ts-ignore Error type is not well defined
     return <div>Error loading node: {(error as Error).message}</div>;
   }
   if (!item) {
     return <div>Loading...</div>;
   }
 
-  return <MainInfoSection resource={item} />;
+  const { spec = {}, status = {}, metadata = {} } = item.jsonData || {};
+  const conditions = status.conditions || [];
+  const readyCondition = conditions.find((c: any) => c.type === 'Ready');
+  const schedulableCondition = conditions.find((c: any) => c.type === 'Schedulable');
+
+  return (
+    <>
+      <MainInfoSection
+        resource={item}
+        // @ts-ignore
+        title={`Node: ${metadata.name}`}
+        extraInfo={[
+          {
+            name: 'Ready',
+            value: (
+              <StatusLabel
+                status={readyCondition?.status === 'True' ? 'success' : 'error'}
+              >
+                {readyCondition?.status || 'Unknown'}
+              </StatusLabel>
+            ),
+          },
+          {
+            name: 'Schedulable',
+            value: (
+               <StatusLabel
+                 status={schedulableCondition?.status === 'True' ? 'success' : 'error'}
+               >
+                 {schedulableCondition?.status || 'Unknown'}
+               </StatusLabel>
+             ),
+          },
+          { name: 'Allow Scheduling', value: String(spec.allowScheduling ?? '-') },
+          { name: 'Region', value: status.region || '-' },
+          { name: 'Zone', value: status.zone || '-' },
+        ]}
+        // actions={[ /* Add Actions Here */ ]}
+      />
+      <SectionBox title="Configuration">
+        <NameValueTable
+          rows={[
+            { name: 'Tags', value: spec.tags?.join(', ') || '-' },
+            { name: 'Instance Manager CPU Request', value: spec.instanceManagerCPURequest || '-' },
+            // TODO: Render disks in a better way, maybe a table?
+            { name: 'Disks', value: Object.keys(spec.disks || {}).join(', ') || '-' },
+          ]}
+        />
+      </SectionBox>
+      <SectionBox title="Status Details">
+         <NameValueTable
+           rows={[
+             { name: 'Auto Evicting', value: String(status.autoEvicting) },
+             { name: 'Last Periodic Snapshot Check', value: status.snapshotCheckStatus?.lastPeriodicCheckedAt || '-' },
+             // TODO: Render diskStatus in a better way, maybe a table?
+             { name: 'Disk Status', value: Object.keys(status.diskStatus || {}).join(', ') || '-' },
+           ]}
+         />
+      </SectionBox>
+      <SectionBox title="Conditions">
+        <ConditionsTable resource={item.jsonData} />
+      </SectionBox>
+    </>
+  );
 }
 
 function BackupDetailsView() {
@@ -180,13 +244,69 @@ function BackupDetailsView() {
   const [item, error] = LonghornBackup.useGet(name, namespace);
 
   if (error) {
+    // @ts-ignore Error type is not well defined
     return <div>Error loading backup: {(error as Error).message}</div>;
   }
   if (!item) {
     return <div>Loading...</div>;
   }
 
-  return <MainInfoSection resource={item} />;
+  const { spec = {}, status = {}, metadata = {} } = item.jsonData || {};
+
+  return (
+    <>
+      <MainInfoSection
+        resource={item}
+        // @ts-ignore
+        title={`Backup: ${metadata.name}`}
+        extraInfo={[
+          { name: 'State', value: status.state || '-' },
+          { name: 'Snapshot Name', value: status.snapshotName || '-' },
+          { name: 'Backup Target', value: status.backupTargetName || '-' },
+          { name: 'Volume Name', value: status.volumeName || '-' },
+        ]}
+        // actions={[ /* Add Actions Here */ ]}
+      />
+      <SectionBox title="Details">
+        <NameValueTable
+          rows={[
+            { name: 'Size', value: status.size || '-' },
+            { name: 'Newly Uploaded Data', value: status.newlyUploadDataSize || '-' },
+            { name: 'Re-Uploaded Data', value: status.reUploadedDataSize || '-' },
+            { name: 'Snapshot Created At', value: status.snapshotCreatedAt || '-' },
+            { name: 'Backup Created At', value: status.backupCreatedAt || '-' },
+            { name: 'Last Synced At', value: status.lastSyncedAt || '-' },
+            { name: 'Compression Method', value: status.compressionMethod || '-' },
+            { name: 'Volume Size', value: status.volumeSize || '-' },
+            { name: 'Volume Created At', value: status.volumeCreated || '-' },
+            { name: 'Volume Backing Image', value: status.volumeBackingImageName || '-' },
+            { name: 'Progress', value: `${status.progress || 0}%` },
+            { name: 'Replica Address', value: status.replicaAddress || '-' },
+          ]}
+        />
+      </SectionBox>
+      {spec.labels && (
+        <SectionBox title="Spec Labels">
+          <NameValueTable rows={Object.entries(spec.labels).map(([k, v]) => ({ name: k, value: v as string }))} />
+        </SectionBox>
+      )}
+      {status.labels && (
+        <SectionBox title="Status Labels">
+          <NameValueTable rows={Object.entries(status.labels).map(([k, v]) => ({ name: k, value: v as string }))} />
+        </SectionBox>
+      )}
+      {status.error && (
+        <SectionBox title="Error">
+          <pre>{status.error}</pre>
+        </SectionBox>
+      )}
+      {status.messages && (
+         <SectionBox title="Messages">
+           <NameValueTable rows={Object.entries(status.messages).map(([k, v]) => ({ name: k, value: v as string }))} />
+         </SectionBox>
+      )}
+    </>
+  );
 }
 
 function EngineImageDetailsView() {
@@ -194,13 +314,58 @@ function EngineImageDetailsView() {
   const [item, error] = LonghornEngineImage.useGet(name, namespace);
 
   if (error) {
+    // @ts-ignore Error type is not well defined
     return <div>Error loading engine image: {(error as Error).message}</div>;
   }
   if (!item) {
     return <div>Loading...</div>;
   }
 
-  return <MainInfoSection resource={item} />;
+  const { spec = {}, status = {}, metadata = {} } = item.jsonData || {};
+
+  return (
+    <>
+      <MainInfoSection
+        resource={item}
+        // @ts-ignore
+        title={`Engine Image: ${metadata.name}`}
+        extraInfo={[
+          { name: 'State', value: status.state || '-' },
+          { name: 'Image', value: spec.image || '-' },
+          { name: 'Ref Count', value: status.refCount ?? '-' },
+          { name: 'Build Date', value: status.buildDate || '-' },
+          { name: 'Incompatible', value: String(status.incompatible) },
+        ]}
+        // actions={[ /* Add Actions Here */ ]}
+      />
+      <SectionBox title="Details">
+        <NameValueTable
+          rows={[
+            { name: 'Version', value: status.version || '-' },
+            { name: 'Git Commit', value: status.gitCommit || '-' },
+            { name: 'CLI API Version', value: `${status.cliAPIMinVersion || '?'} - ${status.cliAPIVersion || '?'}` },
+            { name: 'Controller API Version', value: `${status.controllerAPIMinVersion || '?'} - ${status.controllerAPIVersion || '?'}` },
+            { name: 'Data Format Version', value: `${status.dataFormatMinVersion || '?'} - ${status.dataFormatVersion || '?'}` },
+            { name: 'No Ref Since', value: status.noRefSince || '-' },
+          ]}
+        />
+      </SectionBox>
+      {status.nodeDeploymentMap && (
+        <SectionBox title="Node Deployment Status">
+          <NameValueTable
+            rows={Object.entries(status.nodeDeploymentMap).map(([node, deployed]) => ({
+              name: node,
+              // @ts-ignore
+              value: String(deployed),
+            }))}
+          />
+        </SectionBox>
+      )}
+      <SectionBox title="Conditions">
+        <ConditionsTable resource={item.jsonData} />
+      </SectionBox>
+    </>
+  );
 }
 
 // Define routes and sidebar names as constants

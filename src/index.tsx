@@ -16,8 +16,12 @@ import {
   StatusLabel,
   Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+} from '@mui/material';
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
 import { useParams } from 'react-router-dom';
@@ -788,8 +792,46 @@ const categoryOrder = [
   'Other',
 ];
 
+// --- Helper TabPanel Component ---
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`setting-tabpanel-${index}`}
+      aria-labelledby={`setting-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        // Add some padding to the panel content
+        <Box sx={{ pt: 2, pb: 2 }}> 
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+// Function to generate accessibility props for tabs
+function a11yProps(index: number) {
+  return {
+    id: `setting-tab-${index}`,
+    'aria-controls': `setting-tabpanel-${index}`,
+  };
+}
+
 function SettingsView() {
   const [settings, error] = LonghornSetting.useList();
+  // State for the active tab index
+  const [activeTab, setActiveTab] = React.useState(0);
 
   const groupedSettings = React.useMemo(() => {
     if (!settings) return null;
@@ -822,60 +864,65 @@ function SettingsView() {
     return sortedGroups;
   }, [settings]);
 
+  // Handler for changing tabs
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
   if (error) {
     // @ts-ignore Allow error message display
-    return (
-      <Typography color="error">Error loading settings: {(error as Error).message}</Typography>
-    );
+    return <Typography color="error">Error loading settings: {(error as Error).message}</Typography>;
   }
 
   if (!groupedSettings) {
     return <Loader title="Loading Longhorn Settings..." />;
   }
 
+  const categories = Object.keys(groupedSettings);
+
   return (
-    <Box>
-      {Object.entries(groupedSettings).map(([category, settingsInCategory]) => (
-        <Accordion key={category} defaultExpanded={category === 'General'}>
-          <AccordionSummary aria-controls={`${category}-content`} id={`${category}-header`}>
-            <Typography variant="h6">
-              {category} ({settingsInCategory.length})
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ paddingX: 1, paddingY: 1 }}>
-            <NameValueTable
-              rows={settingsInCategory.map(setting => ({
-                name: setting.metadata.name,
-                value: (
-                  // Revised Box styling for better side-by-side layout
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'baseline',
-                      width: '100%',
-                    }}
-                  >
-                    {/* Value Typography takes available space */}
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      sx={{ wordBreak: 'break-word', flexGrow: 1, mr: 1 }}
-                    >
-                      {(setting.jsonData.value ?? '-').toString()}
-                    </Typography>
-                    {/* Status Label in a non-shrinking Box with left margin */}
-                    <Box component="span" sx={{ flexShrink: 0, ml: 1 }}>
-                      <StatusLabel status={setting.jsonData.status?.applied ? 'success' : 'error'}>
-                        {(setting.jsonData.status?.applied ?? false).toString()}
-                      </StatusLabel>
-                    </Box>
-                  </Box>
-                ),
-              }))}
+    // Use Box as the main container
+    <Box sx={{ width: '100%' }}>
+      {/* Tab Headers */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          aria-label="Longhorn settings categories"
+          variant="scrollable" // Allow tabs to scroll if they overflow
+          scrollButtons="auto" // Show scroll buttons automatically
+        >
+          {categories.map((category, index) => (
+            <Tab 
+              key={category} 
+              label={`${category} (${groupedSettings[category].length})`} 
+              {...a11yProps(index)} 
             />
-          </AccordionDetails>
-        </Accordion>
+          ))}
+        </Tabs>
+      </Box>
+
+      {/* Tab Panels */}
+      {categories.map((category, index) => (
+        <TabPanel key={category} value={activeTab} index={index}>
+          <NameValueTable
+            rows={groupedSettings[category].map(setting => ({
+              name: setting.metadata.name,
+              value: (
+                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', width: '100%' }}>
+                  <Typography component="span" variant="body2" sx={{ wordBreak: 'break-word', flexGrow: 1, mr: 1 }}>
+                     {(setting.jsonData.value ?? '-').toString()}
+                  </Typography>
+                  <Box component="span" sx={{ flexShrink: 0, ml: 1 }}>
+                    <StatusLabel status={setting.jsonData.status?.applied ? 'success' : 'error'}>
+                      {(setting.jsonData.status?.applied ? 'applied' : 'not applied')} 
+                    </StatusLabel>
+                  </Box>
+                </Box>
+              ),
+            }))}
+          />
+        </TabPanel>
       ))}
     </Box>
   );

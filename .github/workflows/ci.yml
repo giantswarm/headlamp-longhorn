@@ -87,7 +87,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker image (Plugin Files)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: . # Build from the root of the repo where Dockerfile is
           # Use the Dockerfile that builds only the plugin files

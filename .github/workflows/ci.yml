@@ -30,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20' # Or your preferred LTS version
+          node-version: '24' # Or your preferred LTS version
           cache: 'npm'
 
       - name: Install dependencies

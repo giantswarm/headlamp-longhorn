@@ -27,6 +27,7 @@ const longhornVersion = 'v1beta2'; // Using v1beta2 as defined in CRDs
 const LonghornVolume = makeCustomResourceClass({
   apiInfo: [{ group: longhornGroup, version: longhornVersion }],
   isNamespaced: true,
+  kind: 'Volume',
   singularName: 'Volume',
   pluralName: 'volumes',
 });
@@ -34,6 +35,7 @@ const LonghornVolume = makeCustomResourceClass({
 const LonghornNode = makeCustomResourceClass({
   apiInfo: [{ group: longhornGroup, version: longhornVersion }],
   isNamespaced: true, // Assuming Nodes are namespaced based on CRD, adjust if cluster-scoped
+  kind: 'Node',
   singularName: 'Node',
   pluralName: 'nodes',
 });
@@ -41,6 +43,7 @@ const LonghornNode = makeCustomResourceClass({
 const LonghornSetting = makeCustomResourceClass({
   apiInfo: [{ group: longhornGroup, version: longhornVersion }],
   isNamespaced: true, // Settings CRD scope is Namespaced
+  kind: 'Setting',
   singularName: 'Setting',
   pluralName: 'settings',
 });
@@ -48,6 +51,7 @@ const LonghornSetting = makeCustomResourceClass({
 const LonghornBackup = makeCustomResourceClass({
   apiInfo: [{ group: longhornGroup, version: longhornVersion }],
   isNamespaced: true,
+  kind: 'Backup',
   singularName: 'Backup',
   pluralName: 'backups',
 });
@@ -55,6 +59,7 @@ const LonghornBackup = makeCustomResourceClass({
 const LonghornEngineImage = makeCustomResourceClass({
   apiInfo: [{ group: longhornGroup, version: longhornVersion }],
   isNamespaced: true, // EngineImage CRD scope is Namespaced
+  kind: 'EngineImage',
   singularName: 'EngineImage',
   pluralName: 'engineimages',
 });
@@ -606,7 +611,6 @@ registerRoute({
 registerRoute({
   path: '/longhorn/volumes/:namespace/:name',
   sidebar: LONGHORN_VOLUMES_LIST_ROUTE,
-  parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_VOLUME_DETAILS_ROUTE,
   exact: true,
   component: VolumeDetailsView,
@@ -658,7 +662,6 @@ registerRoute({
 registerRoute({
   path: '/longhorn/nodes/:namespace/:name',
   sidebar: LONGHORN_NODES_LIST_ROUTE,
-  parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_NODE_DETAILS_ROUTE,
   exact: true,
   component: NodeDetailsView,
@@ -988,7 +991,6 @@ registerRoute({
 registerRoute({
   path: '/longhorn/backups/:namespace/:name',
   sidebar: LONGHORN_BACKUPS_LIST_ROUTE,
-  parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_BACKUP_DETAILS_ROUTE,
   exact: true,
   component: BackupDetailsView,
@@ -1042,7 +1044,6 @@ registerRoute({
 registerRoute({
   path: '/longhorn/engineimages/:namespace/:name',
   sidebar: LONGHORN_ENGINE_IMAGES_LIST_ROUTE,
-  parent: LONGHORN_ROOT_SIDEBAR,
   name: LONGHORN_ENGINE_IMAGE_DETAILS_ROUTE,
   exact: true,
   component: EngineImageDetailsView,

@@ -2,3 +2,5 @@ node_modules
 .eslintcache
 .DS_Store
 *.txt
+dist
+storybook-static

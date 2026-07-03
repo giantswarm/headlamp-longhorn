@@ -1,33 +1,11 @@
-# Dockerfile
-# Stage 1: Build the headlamp-longhorn plugin
-FROM node:24-alpine as builder
+# The plugin bundle is built by the CircleCI node-build job (npm run ci:build)
+# and handed to this image build through the CircleCI workspace: dist/ is
+# expected to exist in the build context. This image only holds files -- no
+# CMD or ENTRYPOINT.
+FROM alpine:3.23
 
-# Set the working directory
-WORKDIR /plugin
+ARG PLUGIN_NAME=headlamp-longhorn
 
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
-
-# Copy the rest of the plugin source code
-COPY . .
-
-# Build the plugin using the headlamp-plugin tool
-# This creates the necessary files in the /plugin/dist directory
-RUN npm run build
-
-# Stage 2: Create the final image containing only the built plugin artifacts
-FROM alpine:latest
-
-# Create the directory structure expected by Headlamp (/plugins/<plugin-folder-name>)
-# Using 'headlamp-longhorn' as the folder name based on repo/directory structure
-RUN mkdir -p /plugins/headlamp-longhorn
-
-# Copy the built plugin files (dist/) and package.json from the builder stage
-COPY --from=builder /plugin/dist/ /plugins/headlamp-longhorn/
-COPY --from=builder /plugin/package.json /plugins/headlamp-longhorn/
-
-# Optional: Set permissions if needed, though typically handled by volume mounts/Headlamp itself
-# RUN chown -R <someuser>:<somegroup> /plugins
-
-# No CMD or ENTRYPOINT needed, this image just holds files. 
+# Headlamp expects /plugins/<plugin-folder-name>/main.js + package.json.
+COPY dist/ /plugins/${PLUGIN_NAME}/
+COPY package.json /plugins/${PLUGIN_NAME}/

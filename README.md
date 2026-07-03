@@ -54,7 +54,7 @@ initContainers:
   - name: init-longhorn-plugin # Changed name slightly
     # Use the image containing your built plugin files
     # Ensure this image name matches the one you built/is built by CI
-    image: ghcr.io/giantswarm/headlamp-longhorn:latest 
+    image: gsoci.azurecr.io/giantswarm/headlamp-longhorn:0.1.0 # use the latest release tag
     imagePullPolicy: Always
     command:
       - /bin/sh
@@ -99,42 +99,10 @@ Once installed and Headlamp is connected to a cluster with Longhorn running:
 
 Instead of installing the plugin manually, you can build a container image that contains just the necessary files for this plugin (`dist/` directory and `package.json`). This image can then be used with an initContainer (as shown in the In-Cluster Deployment section) to copy the plugin into your main Headlamp deployment.
 
-1.  **Create a Dockerfile:** Place the following `Dockerfile` in the root of the `headlamp-longhorn` plugin directory:
+1.  **Build the plugin bundle:** the repository `Dockerfile` only copies a prebuilt `dist/`, so build it first:
 
-    ```dockerfile
-    # Dockerfile
-    # Stage 1: Build the headlamp-longhorn plugin
-    FROM node:20-alpine as builder
-
-    # Set the working directory
-    WORKDIR /plugin
-
-    # Copy package files and install dependencies
-    COPY package*.json ./
-    RUN npm install
-
-    # Copy the rest of the plugin source code
-    COPY . .
-
-    # Build the plugin using the headlamp-plugin tool
-    # This creates the necessary files in the /plugin/dist directory
-    RUN npm run build
-
-    # Stage 2: Create the final image containing only the built plugin artifacts
-    FROM alpine:latest
-
-    # Create the directory structure expected by Headlamp (/plugins/<plugin-folder-name>)
-    # Using 'headlamp-longhorn' as the folder name based on repo/directory structure
-    RUN mkdir -p /plugins/headlamp-longhorn
-
-    # Copy the built plugin files (dist/) and package.json from the builder stage
-    COPY --from=builder /plugin/dist/ /plugins/headlamp-longhorn/
-    COPY --from=builder /plugin/package.json /plugins/headlamp-longhorn/
-
-    # Optional: Set permissions if needed, though typically handled by volume mounts/Headlamp itself
-    # RUN chown -R <someuser>:<somegroup> /plugins
-
-    # No CMD or ENTRYPOINT needed, this image just holds files.
+    ```bash
+    npm run ci:build
     ```
 
 2.  **Build the image:** Run this command from the root of the `headlamp-longhorn` plugin directory:
@@ -153,7 +121,7 @@ Instead of installing the plugin manually, you can build a container image that 
 
 This image can now be referenced in an initContainer as shown in the In-Cluster Deployment section.
 
-**Note:** An image containing just the plugin files is automatically built and pushed to `ghcr.io/giantswarm/headlamp-longhorn` by a [GitHub Actions workflow](.github/workflows/ci.yml) whenever changes are pushed to the `main` branch or a version tag (e.g., `v1.x.x`) is created.
+**Note:** An image containing just the plugin files is automatically built and pushed to `gsoci.azurecr.io/giantswarm/headlamp-longhorn` by the CircleCI pipeline on every release tag.
 
 ## Development
 

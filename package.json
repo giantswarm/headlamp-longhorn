@@ -12,7 +12,10 @@
     "tsc": "headlamp-plugin tsc",
     "storybook": "headlamp-plugin storybook",
     "storybook-build": "headlamp-plugin storybook-build",
-    "test": "headlamp-plugin test"
+    "test": "headlamp-plugin test",
+    "ci:lint": "headlamp-plugin lint && headlamp-plugin format --check",
+    "ci:verify": "headlamp-plugin tsc && npm run ci:lint && headlamp-plugin test",
+    "ci:build": "headlamp-plugin build"
   },
   "keywords": [
     "headlamp",

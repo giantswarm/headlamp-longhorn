@@ -2,7 +2,7 @@
 # and handed to this image build through the CircleCI workspace: dist/ is
 # expected to exist in the build context. This image only holds files -- no
 # CMD or ENTRYPOINT.
-FROM alpine:3.23
+FROM alpine:3.24
 
 ARG PLUGIN_NAME=headlamp-longhorn
 

@@ -32,7 +32,7 @@ This plugin currently supports viewing the following Longhorn resources:
 
 ### Desktop App (Manual)
 
-1.  [Build the plugin](./DEVELOPMENT.md#building-for-production) to get the `main.js` file (and potentially other assets in the `dist` directory).
+1.  [Build the plugin](#advanced-building-a-plugin-files-image) to get the `main.js` file (and potentially other assets in the `dist` directory).
 2.  Create the plugin directory structure:
     *   **Linux:** `~/.config/Headlamp/plugins/headlamp-longhorn/`
     *   **macOS:** `~/Library/Application Support/Headlamp/plugins/headlamp-longhorn/`

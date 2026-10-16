@@ -1,8 +1,36 @@
 {
   "extends": "./node_modules/@kinvolk/headlamp-plugin/config/plugins-tsconfig.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-    "noImplicitAny": false
+    "baseUrl": null,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noImplicitAny": false,
+    "paths": {
+      "@iconify/react": [
+        "./node_modules/@kinvolk/headlamp-plugin/node_modules/@iconify/react/src/icon.js"
+      ],
+      "@kinvolk/headlamp-plugin/lib/Crd": ["./node_modules/@kinvolk/headlamp-plugin/lib/lib/crd.d.ts"],
+      "@kinvolk/headlamp-plugin/lib/K8s/*": [
+        "./node_modules/@kinvolk/headlamp-plugin/lib/lib/k8s/*/index.d.ts",
+        "./node_modules/@kinvolk/headlamp-plugin/lib/lib/k8s/*.d.ts"
+      ],
+      "@kinvolk/headlamp-plugin/lib/*": [
+        "./node_modules/@kinvolk/headlamp-plugin/lib/lib/*/index.d.ts",
+        "./node_modules/@kinvolk/headlamp-plugin/lib/lib/*.d.ts"
+      ],
+      "@kinvolk/headlamp-plugin/lib/ApiProxy": [
+        "./node_modules/@kinvolk/headlamp-plugin/lib/lib/k8s/apiProxy.d.ts"
+      ],
+      "@kinvolk/headlamp-plugin/lib/Utils": ["./node_modules/@kinvolk/headlamp-plugin/lib/lib/util.d.ts"],
+      "@kinvolk/headlamp-plugin/lib/CommonComponents": [
+        "./node_modules/@kinvolk/headlamp-plugin/lib/components/common/index.d.ts"
+      ],
+      "@kinvolk/headlamp-plugin/lib/CommonComponents/*": [
+        "./node_modules/@kinvolk/headlamp-plugin/lib/components/common/*/index.d.ts",
+        "./node_modules/@kinvolk/headlamp-plugin/lib/components/common/*.d.ts"
+      ]
+    },
+    "rootDirs": ["./node_modules/@kinvolk/headlamp-plugin/"]
   },
   "include": ["./src/**/*"]
 }

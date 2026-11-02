@@ -5,7 +5,7 @@
 # workflow in .circleci/config.yml merges into this file at pipeline runtime.
 version: 2.1
 orbs:
-  architect: giantswarm/architect@10.15.1
+  architect: giantswarm/architect@10.16.7
 
 jobs:
   # Self-contained Node build/test on a cimg/node executor (architect ships no
@@ -15,7 +15,7 @@ jobs:
   # repo redirects its bespoke toolchain by editing those scripts, not this job.
   node-build:
     docker:
-    - image: cimg/node:24.21.0
+    - image: cimg/node:24.22.2
     resource_class: large
     # Worker counts sized from the resource class's memory, not from the CPUs
     # the tools detect (the Docker executor shows the host's count to
@@ -75,6 +75,16 @@ jobs:
 workflows:
   build:
     jobs:
+    # Resolve the version once, at the start of the workflow, and persist it to
+    # the workspace (.pipeline_version). Every image and chart job requires
+    # this job and builds with that version instead of resolving its own, so a
+    # stable tag landing while the workflow runs (a promote) cannot give the
+    # image and the chart that references it different versions.
+    - architect/pin-version:
+        name: pin-version
+        filters:
+          tags:
+            only: /^v.*/
     - node-build:
         filters:
           tags:
@@ -89,6 +99,7 @@ workflows:
         name: build-image
         push: false
         requires:
+        - pin-version
         - node-build
         filters:
           branches:
@@ -104,6 +115,7 @@ workflows:
         name: push-to-registries-release
         split-china-push: true
         requires:
+        - pin-version
         - node-build
         filters:
           tags:
